@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { axiosToInstance } from "../lib/axios";
 import toast from "react-hot-toast";
-import { app } from "../Constants/firebase";
+import { app, isFirebaseConfigured } from "../Constants/firebase";
 import {getAuth, GoogleAuthProvider, signInWithPopup} from 'firebase/auth'
 
 
@@ -113,6 +113,10 @@ export const useAuthStore = create((set,get) => ({
   },
   setonlineUser : (user)=> set({onlineUser:user}),
    handleGoogle: async () => {
+    if (!isFirebaseConfigured) {
+      toast.error("Google sign-in is unavailable: VITE_FIREBASE_KEY is not configured");
+      return;
+    }
     set({ isSignUPing: true });
     try {
       const provider = new GoogleAuthProvider();

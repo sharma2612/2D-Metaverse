@@ -10,6 +10,7 @@ import { axiosToInstance } from '../lib/axios';
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
 import { MicrophoneIcon, MicrophoneSlashIcon } from '@phosphor-icons/react';
+import toast from 'react-hot-toast';
 
 const RoomView = () => {
   const { videoChatRomm,endVideoCall } = useChatStore();
@@ -66,6 +67,18 @@ const RoomView = () => {
 
   const joinRoom = async () => {
     if (room && room.connectionState === ConnectionState.Connected) return;
+
+    // Room.connect() builds a URL out of this value, so an unset
+    // VITE_LIVEKIT_URL surfaces as an opaque "Invalid URL" TypeError deep inside
+    // the SDK. Fail with an actionable message instead.
+    const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL;
+    if (!LIVEKIT_URL) {
+      console.error(
+        'VITE_LIVEKIT_URL is not set. Add it to deploy.env and rebuild the image.'
+      );
+      toast.error('Video is not configured: VITE_LIVEKIT_URL is missing');
+      return;
+    }
 
     try {
       const tokenRes = await axiosToInstance.get(
@@ -153,8 +166,6 @@ const RoomView = () => {
           prev.filter((p) => p.identity !== participant.identity)
         );
       });
-      const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL;
-      console.log(LIVEKIT_URL);
       await newRoom.connect(LIVEKIT_URL, token);
 
       newRoom.on('connected', (participant) => {

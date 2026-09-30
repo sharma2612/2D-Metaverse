@@ -1,0 +1,43 @@
+# Fly.io deployment for 2d-metaverse.
+#
+# Builds from the Dockerfile in this directory; no git push required. Every
+# configuration value lives in the committed deploy.env, which the Dockerfile
+# sources during the build (VITE_* values) and copies to /app/api/.env (server
+# values). Nothing needs to be set as a Fly secret.
+
+app = "2d-metaverse"
+primary_region = "bom" # Mumbai
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "5000"
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # WebSocket upgrades must reach the app untouched. socket.io opens its own
+  # long-lived connections, and the defaults would idle them out.
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 400
+    soft_limit = 200
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "25s"
+    method = "GET"
+    path = "/"
+
+# socket.io keeps one connection open per browser, and every connected client is
+# held in memory, so the free 256MB tier is not enough headroom. Start at 1GB.
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"

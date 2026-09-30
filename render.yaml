@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: 2d-metaverse
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Free tier is what works for socket.io here: it runs a single instance, so
+    # the module-level userSocketMap/groupMessages in api/socket.js are shared
+    # across all clients, and Render imposes no maximum WebSocket duration.
+    # It does spin down after 15 minutes with no inbound HTTP or WebSocket
+    # traffic, and the first wake takes ~30-60s.
+    plan: free
+    healthCheckPath: /
+    # No envVars block on purpose: every value lives in deploy.env at the repo
+    # root and is read during the image build.
